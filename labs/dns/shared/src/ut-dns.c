@@ -23,6 +23,7 @@ int main() {
     /* PART1 TODO: Implement a DNS nameserver for the utexas.edu zone */
     
     /* 1. Create an **UDP** socket */
+    
 
     /* 2. Initialize server address (INADDR_ANY, DNS_PORT) */
     /* Then bind the socket to it */
