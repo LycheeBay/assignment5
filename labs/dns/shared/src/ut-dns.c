@@ -76,7 +76,6 @@ int main() {
     /* find the corresponding record using TDNSFind() and send the response back */
     /* Otherwise, just ignore it. */
 
-
     return 0;
 }
 
