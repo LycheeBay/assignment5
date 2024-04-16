@@ -69,7 +69,14 @@ int main() {
         buffer[n] = '\0'; // Null-terminate the received message
 
         // Parse the received message
-        printf("Message is %s\n", buffer);
+        struct TDNSParseResult *parsed;
+        TDNSParseMsg(buffer, sizeof(buffer), parsed);
+        struct TDNSFindResult *res;
+        if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
+            TDNSFind(ctx, parsed, res);
+            send(sockfd, res, sizeof(res), 0);
+            return 0;
+        }
     }
 
     /* 6. If it is a query for A, AAAA, NS DNS record */
