@@ -55,9 +55,9 @@ int main() {
     /* Add an IP address for ns.cs.utexas.edu domain using TDNSAddRecord() */
 
     TDNSCreateZone(ctx, "utexas.edu");
-    TDNSAddRecord(ctx, "utexas.edu", "www", "23.185.0.4", NULL);
+    TDNSAddRecord(ctx, "utexas.edu", "www", "40.0.0.10", NULL);
     TDNSAddRecord(ctx, "utexas.edu", "cs", NULL, "ns.cs.utexas.edu");
-    TDNSAddRecord(ctx, "cs.utexas.edu", "ns", "128.83.120.48", NULL);
+    TDNSAddRecord(ctx, "cs.utexas.edu", "ns", "40.0.0.20", NULL);
 
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */
 
@@ -69,14 +69,28 @@ int main() {
         buffer[n] = '\0'; // Null-terminate the received message
 
         // Parse the received message
-        struct TDNSParseResult *parsed;
+        struct TDNSParseResult *parsed = malloc(sizeof(struct TDNSParseResult));;
+        if (parsed == NULL) {
+            perror("malloc failed");
+            exit(EXIT_FAILURE);
+        }
         TDNSParseMsg(buffer, sizeof(buffer), parsed);
-        struct TDNSFindResult *res;
+
+        struct TDNSFindResult *res = malloc(sizeof(struct TDNSFindResult)); 
+        if (res == NULL) {
+            perror("malloc failed");
+            exit(EXIT_FAILURE);
+        }
+
         if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
             TDNSFind(ctx, parsed, res);
-            send(sockfd, res, sizeof(res), 0);
-            return 0;
+            //sendto(sockfd, res, sizeof(res), 0);
+            sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&client_addr, client_len);
+            //return 0;
         }
+
+        free(parsed);
+        free(res);
     }
 
     /* 6. If it is a query for A, AAAA, NS DNS record */
