@@ -54,7 +54,7 @@ int main() {
     /* Add an IP address for aquila.cs.utexas.edu domain using TDNSAddRecord() */
 
     TDNSCreateZone(ctx, "cs.utexas.edu");
-    TDNSAddRecord(ctx, "cs.utexas.edu", "www", "50.0.0.10", NULL);
+    TDNSAddRecord(ctx, "cs.utexas.edu", "", "50.0.0.10", NULL);
     TDNSAddRecord(ctx, "cs.utexas.edu", "aquila", "50.0.0.20", NULL);
 
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */

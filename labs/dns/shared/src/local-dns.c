@@ -90,8 +90,10 @@ int main() {
     /* Add an IP address for ns.utexas.edu domain using TDNSAddRecord() */
 
     TDNSCreateZone(ctx, "edu");
-    TDNSAddRecord(ctx, "utexas.edu", "ns", NULL, "ns.utexas.edu");
-    TDNSAddRecord(ctx, "ns.utexas.edu", "ns", "40.0.0.20", NULL);
+    TDNSAddRecord(ctx, "edu", "www.utexas", NULL, "ns.utexas.edu");
+    // TDNSAddRecord(ctx, "ns.utexas.edu", "ns", "40.0.0.20", NULL);
+    TDNSAddRecord(ctx, "edu", "ns.utexas", "40.0.0.20", NULL);
+    // (ctx, "edu", "ns.utexas", "40.0.0.20", NULL);
 
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */
 
@@ -108,7 +110,7 @@ int main() {
             perror("malloc failed");
             exit(EXIT_FAILURE);
         }
-        TDNSParseMsg(buffer, sizeof(buffer), parsed);
+        int TDNSType = TDNSParseMsg(buffer, sizeof(buffer), parsed);
 
         struct TDNSFindResult *res = malloc(sizeof(struct TDNSFindResult)); 
         if (res == NULL) {
@@ -116,17 +118,45 @@ int main() {
             exit(EXIT_FAILURE);
         }
 
-        if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
-            if (TDNSFind(ctx, parsed, res)) {
-                if (parsed->nsIP != NULL) {
-
+        if (TDNSType == TDNS_QUERY) {
+            if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
+                if (TDNSFind(ctx, parsed, res)) { // indicates delegation
+                    if (parsed->nsIP) {
+                        char serialized[BUFFER_SIZE];
+                        TDNSGetIterQuery(parsed, serialized);
+                        // not sure if that's the correct sockfd_in here
+                        putAddrQID(ctx, parsed->dh->id, (struct sockaddr *)&client_addr);
+                        putNSQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
+                    }
+                    else {
+                        sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&client_addr, client_len);
+                    }
                 }
+                // response not found
                 else {
-
+                    sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&client_addr, client_len);
                 }
+                sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&client_addr, client_len);
+                //return 0;
             }
-            sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&client_addr, client_len);
-            //return 0;
+        }
+        else { // TDNS_RESPONSE
+            if (parsed->nsIP) { // non-authoritative
+                char serialized[BUFFER_SIZE];
+                TDNSGetIterQuery(parsed, serialized);
+                putNSQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
+            }
+            else { // authoritative
+                struct sockaddr_in dest_addr;
+                char *nsIPfq = malloc(BUFFER_SIZE);
+                char *nsDomainfq = malloc(BUFFER_SIZE);
+                getNSbyQID(ctx, parsed->dh->id, &nsIPfq, &nsDomainfq);
+                getAddrbyQID(ctx, parsed->dh->id, &dest_addr);
+                sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+                TDNSPutNStoMessage(buffer, BUFFER_SIZE, parsed, nsIPfq, nsDomainfq);
+                delAddrQID(ctx, parsed->dh->id);
+                delNSQID(ctx, parsed->dh->id);
+            }
         }
 
         free(parsed);
