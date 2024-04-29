@@ -85,7 +85,7 @@ int main() {
         if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
             TDNSFind(ctx, parsed, res);
             //sendto(sockfd, res, sizeof(res), 0);
-            sendto(sockfd, res, sizeof(struct TDNSFindResult), 0, (struct sockaddr *)&client_addr, client_len);
+            sendto(sockfd, res->serialized, res->len, 0, (struct sockaddr *)&client_addr, client_len);
             //return 0;
         }
 
