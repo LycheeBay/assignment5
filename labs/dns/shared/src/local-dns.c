@@ -120,8 +120,8 @@ int main() {
 
         if (TDNSType == TDNS_QUERY) {
             if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
-                if (TDNSFind(ctx, parsed, res)) { // indicates delegation
-                    if (parsed->nsIP) {
+                if (TDNSFind(ctx, parsed, res)) { 
+                    if (parsed->nsIP) { // indicates delegation
                         char serialized[BUFFER_SIZE];
                         TDNSGetIterQuery(parsed, serialized);
                         // not sure if that's the correct sockfd_in here
