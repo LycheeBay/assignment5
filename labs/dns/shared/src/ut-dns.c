@@ -62,12 +62,11 @@ int main() {
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */
 
     while (1) {
-        int len, n;
+        socklen_t len = sizeof(client_addr); // len is value/result
+        ssize_t n = recvfrom(sockfd, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client_addr, &len);
+        // buffer[n] = '\0'; // Null-terminate the received message
 
-        len = sizeof(client_addr); // len is value/result
-        n = recvfrom(sockfd, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client_addr, &len);
-        buffer[n] = '\0'; // Null-terminate the received message
-
+        printf("Before TDNSParseResult\n");
         // Parse the received message
         struct TDNSParseResult *parsed = malloc(sizeof(struct TDNSParseResult));;
         if (parsed == NULL) {

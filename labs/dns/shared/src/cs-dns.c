@@ -60,11 +60,11 @@ int main() {
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */
 
     while (1) {
-        int len, n;
-        
-        len = sizeof(client_addr); // len is value/result
-        n = recvfrom(sockfd, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client_addr, &len);
-        buffer[n] = '\0'; // Null-terminate the received message
+        socklen_t len = sizeof(client_addr); // len is value/result
+        printf("Before recvfrom\n");
+        ssize_t n = recvfrom(sockfd, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client_addr, &len);
+        //buffer[n] = '\0'; // Null-terminate the received message
+        printf("After recvfrom\n");
 
         // Parse the received message
         struct TDNSParseResult *parsed = malloc(sizeof(struct TDNSParseResult));;
@@ -72,7 +72,11 @@ int main() {
             perror("malloc failed");
             exit(EXIT_FAILURE);
         }
+
+        printf("Before TDNSParseMSG\n");
         TDNSParseMsg(buffer, n, parsed);
+        printf("After TDNSParseMSG\n");
+
 
         struct TDNSFindResult *res = malloc(sizeof(struct TDNSFindResult)); 
         if (res == NULL) {
@@ -81,7 +85,9 @@ int main() {
         }
 
         if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
+            printf("Before TDNSFind\n");
             TDNSFind(ctx, parsed, res);
+            printf("After TDNSFind\n");
             //sendto(sockfd, res, sizeof(res), 0);
             sendto(sockfd, res->serialized, res->len, 0, (struct sockaddr *)&client_addr, client_len);
             //return 0;
