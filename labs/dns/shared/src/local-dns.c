@@ -149,6 +149,7 @@ int main() {
         }
         else { // TDNS_RESPONSE
             if (parsed->nsIP) { // non-authoritative
+                printf("Not authoritative\n");
                 char serialized[BUFFER_SIZE];
                 int64_t query_size = TDNSGetIterQuery(parsed, serialized);
                 socklen_t delegate_len = sizeof(delegate_addr);
@@ -159,13 +160,11 @@ int main() {
                 sendto(sockfd, buffer, query_size, 0, (struct sockaddr *)&delegate_addr, delegate_len);
             }
             else { // authoritative
-                struct sockaddr_in dest_addr;
-                char *nsIPfq = malloc(128);
-                char *nsDomainfq = malloc(128);
-                getNSbyQID(ctx, parsed->dh->id, &nsIPfq, &nsDomainfq);
-                getAddrbyQID(ctx, parsed->dh->id, &dest_addr);
-                uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, nsIPfq, nsDomainfq);
-                sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+                printf("Authoritative\n");
+                getNSbyQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
+                getAddrbyQID(ctx, parsed->dh->id, (struct sockaddr *)&client_addr);
+                uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, parsed->nsIP, parsed->nsDomain);
+                sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
                 delAddrQID(ctx, parsed->dh->id);
                 delNSQID(ctx, parsed->dh->id);
             }
