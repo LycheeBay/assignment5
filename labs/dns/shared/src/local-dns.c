@@ -91,9 +91,7 @@ int main() {
 
     TDNSCreateZone(ctx, "edu");
     TDNSAddRecord(ctx, "edu", "utexas", NULL, "ns.utexas.edu");
-    // TDNSAddRecord(ctx, "ns.utexas.edu", "ns", "40.0.0.20", NULL);
     TDNSAddRecord(ctx, "utexas.edu", "ns", "40.0.0.20", NULL);
-    // (ctx, "edu", "ns.utexas", "40.0.0.20", NULL);
 
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */
 
@@ -110,7 +108,8 @@ int main() {
             perror("malloc failed");
             exit(EXIT_FAILURE);
         }
-        int TDNSType = TDNSParseMsg(buffer, sizeof(buffer), parsed);
+        //int TDNSType = TDNSParseMsg(buffer, sizeof(buffer), parsed);
+        int TDNSType = TDNSParseMsg(buffer, n, parsed);
 
         struct TDNSFindResult *res = malloc(sizeof(struct TDNSFindResult)); 
         if (res == NULL) {
@@ -162,12 +161,14 @@ int main() {
                 struct sockaddr_in dest_addr;
                 char *nsIPfq = malloc(BUFFER_SIZE);
                 char *nsDomainfq = malloc(BUFFER_SIZE);
-                getNSbyQID(ctx, parsed->dh->id, &nsIPfq, &nsDomainfq);
-                getAddrbyQID(ctx, parsed->dh->id, &dest_addr);
+                getNSbyQID(ctx, parsed->dh->id, &parsed->nsIP, &parsed->nsDomain);
+                getAddrbyQID(ctx, parsed->dh->id, (struct sockaddr *)&client_addr);
                 uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, nsIPfq, nsDomainfq);
-                sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+                sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
                 delAddrQID(ctx, parsed->dh->id);
                 delNSQID(ctx, parsed->dh->id);
+                // free(nsIPfq);
+                // free(nsDomainfq);
             }
         }
 

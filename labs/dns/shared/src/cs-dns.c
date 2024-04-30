@@ -61,7 +61,7 @@ int main() {
 
     while (1) {
         int len, n;
-
+        
         len = sizeof(client_addr); // len is value/result
         n = recvfrom(sockfd, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client_addr, &len);
         buffer[n] = '\0'; // Null-terminate the received message
@@ -72,7 +72,7 @@ int main() {
             perror("malloc failed");
             exit(EXIT_FAILURE);
         }
-        TDNSParseMsg(buffer, sizeof(buffer), parsed);
+        TDNSParseMsg(buffer, n, parsed);
 
         struct TDNSFindResult *res = malloc(sizeof(struct TDNSFindResult)); 
         if (res == NULL) {

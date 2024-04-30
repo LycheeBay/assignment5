@@ -57,7 +57,7 @@ int main() {
     TDNSCreateZone(ctx, "utexas.edu");
     TDNSAddRecord(ctx, "utexas.edu", "www", "40.0.0.10", NULL);
     TDNSAddRecord(ctx, "utexas.edu", "cs", NULL, "ns.cs.utexas.edu");
-    TDNSAddRecord(ctx, "cs.utexas.edu", "ns", "40.0.0.20", NULL);
+    TDNSAddRecord(ctx, "cs.utexas.edu", "ns", "50.0.0.30", NULL);
 
     /* 5. Receive a message continuously and parse it using TDNSParseMsg() */
 
@@ -74,18 +74,23 @@ int main() {
             perror("malloc failed");
             exit(EXIT_FAILURE);
         }
-        TDNSParseMsg(buffer, sizeof(buffer), parsed);
+        printf("Before parsemsg\n");
+        TDNSParseMsg(buffer, n, parsed);
+        printf("After parsemsg\n");
 
         struct TDNSFindResult *res = malloc(sizeof(struct TDNSFindResult)); 
         if (res == NULL) {
             perror("malloc failed");
             exit(EXIT_FAILURE);
         }
+        printf("After TDNSFindResult\n");
 
         if (parsed->qtype == 1 || parsed->qtype == 2 || parsed->qtype == 28) {  // A, NS, AAAA
             TDNSFind(ctx, parsed, res);
+            printf("After TDNSFind\n");
             //sendto(sockfd, res, sizeof(res), 0);
             sendto(sockfd, res->serialized, res->len, 0, (struct sockaddr *)&client_addr, client_len);
+            printf("After sendto\n");
             //return 0;
         }
 
