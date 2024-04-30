@@ -162,11 +162,17 @@ int main() {
             else { // authoritative
                 printf("Authoritative\n");
                 getNSbyQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
+                printf("1\n");
                 getAddrbyQID(ctx, parsed->dh->id, (struct sockaddr *)&client_addr);
+                printf("1\n");
                 uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, parsed->nsIP, parsed->nsDomain);
+                printf("1\n");
                 sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+                printf("1\n");
                 delAddrQID(ctx, parsed->dh->id);
+                printf("1\n");
                 delNSQID(ctx, parsed->dh->id);
+                printf("1\n");
             }
         }
 
