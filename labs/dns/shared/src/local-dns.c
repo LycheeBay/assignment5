@@ -160,8 +160,8 @@ int main() {
             }
             else { // authoritative
                 struct sockaddr_in dest_addr;
-                char *nsIPfq = malloc(BUFFER_SIZE);
-                char *nsDomainfq = malloc(BUFFER_SIZE);
+                char *nsIPfq = malloc(128);
+                char *nsDomainfq = malloc(128);
                 getNSbyQID(ctx, parsed->dh->id, &nsIPfq, &nsDomainfq);
                 getAddrbyQID(ctx, parsed->dh->id, &dest_addr);
                 uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, nsIPfq, nsDomainfq);
