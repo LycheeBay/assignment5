@@ -128,7 +128,7 @@ int main() {
                         //delegate_addr.sin_addr.s_addr = (uint32_t) parsed->nsIP;
                         inet_aton(parsed->nsIP, &delegate_addr.sin_addr);
                         delegate_addr.sin_family =  AF_INET;
-                        delegate_addr.sin_port = DNS_PORT;
+                        delegate_addr.sin_port = htons(DNS_PORT);
                         // not sure if that's the correct sockfd_in here
                         putAddrQID(ctx, parsed->dh->id, (struct sockaddr *)&client_addr);
                         putNSQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
@@ -150,8 +150,13 @@ int main() {
         else { // TDNS_RESPONSE
             if (parsed->nsIP) { // non-authoritative
                 char serialized[BUFFER_SIZE];
-                TDNSGetIterQuery(parsed, serialized);
+                int64_t query_size = TDNSGetIterQuery(parsed, serialized);
+                socklen_t delegate_len = sizeof(delegate_addr);
+                inet_aton(parsed->nsIP, &delegate_addr.sin_addr);
+                delegate_addr.sin_family =  AF_INET;
+                delegate_addr.sin_port = htons(DNS_PORT);
                 putNSQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
+                sendto(sockfd, buffer, query_size, 0, (struct sockaddr *)&delegate_addr, delegate_len);
             }
             else { // authoritative
                 struct sockaddr_in dest_addr;
@@ -159,7 +164,7 @@ int main() {
                 char *nsDomainfq = malloc(BUFFER_SIZE);
                 getNSbyQID(ctx, parsed->dh->id, &nsIPfq, &nsDomainfq);
                 getAddrbyQID(ctx, parsed->dh->id, &dest_addr);
-                uint64_t new_length = (buffer, n, parsed, nsIPfq, nsDomainfq);
+                uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, nsIPfq, nsDomainfq);
                 sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
                 delAddrQID(ctx, parsed->dh->id);
                 delNSQID(ctx, parsed->dh->id);
