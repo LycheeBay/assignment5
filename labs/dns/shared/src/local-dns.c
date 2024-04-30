@@ -161,7 +161,7 @@ int main() {
             }
             else { // authoritative
                 printf("Authoritative\n");
-                getNSbyQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
+                getNSbyQID(ctx, parsed->dh->id, &parsed->nsIP, &parsed->nsDomain);
                 printf("1\n");
                 getAddrbyQID(ctx, parsed->dh->id, (struct sockaddr *)&client_addr);
                 printf("1\n");
