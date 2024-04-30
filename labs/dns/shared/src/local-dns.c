@@ -98,7 +98,7 @@ int main() {
     while (1) {
         socklen_t len = sizeof(client_addr); // len is value/result
         ssize_t n = recvfrom(sockfd, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client_addr, &len);
-        buffer[n] = '\0'; // Null-terminate the received message
+        //buffer[n] = '\0'; // Null-terminate the received message
 
         // Parse the received message
         struct TDNSParseResult *parsed = malloc(sizeof(struct TDNSParseResult));;
@@ -140,12 +140,12 @@ int main() {
                 else {
                     sendto(sockfd, res->serialized, res->len, 0, (struct sockaddr *)&client_addr, client_len);
                 }
-                sendto(sockfd, res->serialized, res->len, 0, (struct sockaddr *)&client_addr, client_len);
+                //sendto(sockfd, res->serialized, res->len, 0, (struct sockaddr *)&client_addr, client_len);
                 //return 0;
             }
         }
         else { // TDNS_RESPONSE
-            if (parsed->nsIP) { // non-authoritative
+            if (!parsed->dh->aa && parsed->nsIP) { // non-authoritative
                 char serialized[BUFFER_SIZE];
                 int64_t query_size = TDNSGetIterQuery(parsed, serialized);
                 socklen_t delegate_len = sizeof(delegate_addr);
@@ -154,20 +154,17 @@ int main() {
                 delegate_addr.sin_family =  AF_INET;
                 delegate_addr.sin_port = htons(DNS_PORT);
                 putNSQID(ctx, parsed->dh->id, parsed->nsIP, parsed->nsDomain);
-                sendto(sockfd, buffer, query_size, 0, (struct sockaddr *)&delegate_addr, delegate_len);
+                sendto(sockfd, serialized, query_size, 0, (struct sockaddr *)&delegate_addr, delegate_len);
             }
-            else { // authoritative
-                // struct sockaddr_in dest_addr;
-                char *nsIPfq = malloc(BUFFER_SIZE);
-                char *nsDomainfq = malloc(BUFFER_SIZE);
-                getNSbyQID(ctx, parsed->dh->id, &parsed->nsIP, &parsed->nsDomain);
-                getAddrbyQID(ctx, parsed->dh->id, (struct sockaddr_in *)&client_addr);
-                uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, nsIPfq, nsDomainfq);
-                sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+            else if (parsed->dh->aa) { // authoritative
+                struct sockaddr_in original_client;
+                const char *nsIP, *nsDomain;
+                getNSbyQID(ctx, parsed->dh->id, &nsIP, &nsDomain);
+                getAddrbyQID(ctx, parsed->dh->id, (struct sockaddr_in *)&original_client);
+                uint64_t new_length = TDNSPutNStoMessage(buffer, n, parsed, nsIP, nsDomain);
+                sendto(sockfd, buffer, new_length, 0, (struct sockaddr *)&original_client, sizeof(original_client));
                 delAddrQID(ctx, parsed->dh->id);
                 delNSQID(ctx, parsed->dh->id);
-                // free(nsIPfq);
-                // free(nsDomainfq);
             }
         }
 
